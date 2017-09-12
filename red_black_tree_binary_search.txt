@@ -1,0 +1,327 @@
+__author__ = 'mamadoubelly'
+class Noeud:
+    def __init__(self,k, c = None,g=None, d=None, p=None ):
+        self.k = k
+        self.c = c
+        self.p = p
+        self.g = g
+        self.d = d
+        if (self.g is None and self.d is None):
+            self.t=1
+        if (self.g is None and self.d!=None):
+            self.t=self.d.t+1
+        if (self.g!=None and self.d is None):
+            self.t=self.g.t+1
+        if (self.g!=None and self.d!=None):
+            self.t=self.g.t+self.d.t+1
+
+    def __str__(self):
+        if(self.g == None and self.d == None):
+            return "({}, g:None d:None {} t: {} )".format(self.k,self.c,self.t)
+        if(self.g==None and self.d!=None):
+            return "({}, g:None d:{} {} t:{})".format(self.k,self.g.k,self.d.k,self.c,self.t)
+        if(self.g!=None and self.d==None):
+            return "({}, g:{} d:None {} t:{} )".format(self.k,self.g.k,self.d.k,self.c,self.t)
+        if(self.g!=None and self.d!=None):
+            return "({}, g:{} d:{} {} t: {} )".format(self.k,self.g.k,self.d.k,self.c,self.t)
+
+
+
+
+
+
+class RN_arbre:
+
+    def __init__(self, tableau):
+        self.nil = Noeud("None","noir")
+        self.racine = self.nil
+        self.nil.t=0
+
+        for i in range(0,len(tableau)):
+
+            self.RN_arbre_inserer(Noeud(tableau[i],"rouge", self.nil, self.nil, self.nil))
+
+    def RN_arbre_inserer(self, z):
+        if (type(z) == int):
+            self.RN_arbre_inserer(Noeud(z, "rouge", self.nil, self.nil, self.nil))
+        else:
+
+            y=self.nil
+            x=self.racine
+            while x!=self.nil:
+                x.t +=1
+                y=x
+                if z.k<x.k:
+                    x=x.g
+                else:
+                    x=x.d
+            z.p=y
+            if y==self.nil:
+                self.racine=z
+            elif z.k<y.k:
+                y.g=z
+            else:
+                y.d=z
+
+            z.g=self.nil
+            z.d=self.nil
+            z.c="rouge"
+            self.RN_inserer_correction(z)
+            #print("Fin correction")
+
+
+
+
+    def rotation_g(self,x):
+        y=x.d
+        x.d=y.g
+
+        if y.g != self.nil:
+            y.g.p=x
+        y.p=x.p
+        if x.p is self.nil:
+            self.racine=y
+        elif x is x.p.g:
+            x.p.g=y
+        else:
+            x.p.d=y
+        y.g=x
+        x.p=y
+        y.t=x.t
+        x.t=x.g.t+x.d.t+1
+
+
+    def rotation_d(self,x):
+        y=x.g
+        x.g=y.d
+
+        if y.d!=self.nil:
+            y.d.p=x
+        y.p=x.p
+        if x.p is self.nil:
+            self.racine=y
+        elif x is x.p.d:
+            x.p.d=y
+        else:
+            x.p.g=y
+        y.d=x
+        x.p=y
+        y.t=x.t
+        x.t=x.g.t+x.d.t+1
+
+
+
+
+    def RN_inserer_correction(self,z):
+        while z.p.c =="rouge":
+            if z.p==z.p.p.g:
+                y=z.p.p.d
+                if y.c=="rouge":
+                    z.p.c="noir"
+                    y.c="noir"
+                    z.p.p.c="rouge"
+                    z=z.p.p
+                else:
+                    if z == z.p.d:
+                        z=z.p
+                        self.rotation_g(z)
+                    z.p.c="noir"
+                    z.p.p.c="rouge"
+                    self.rotation_d(z.p.p)
+            else:
+                y=z.p.p.g
+                if y.c=="rouge":
+                    z.p.c="noir"
+                    y.c="noir"
+                    z.p.p.c="rouge"
+                    z=z.p.p
+                else:
+                    if(z == z.p.g):
+                        z=z.p
+                        self.rotation_d(z)
+                    z.p.c="noir"
+                    z.p.p.c="rouge"
+                    self.rotation_g(z.p.p)
+        self.racine.c="noir"
+
+    def RN_transplante(self,u,v):
+        if u.p ==self.nil:
+            self.racine=v
+        elif u ==u.p.g:
+            u.p.g=v
+        else:
+            u.p.d=v
+        v.p=u.p
+
+
+    def arbre_minimum(self,x):
+        if x.g != self.nil:
+            return self.arbre_minimum(x.g)
+        return x
+
+
+    def RN_supprimer(self,z):
+        y=z
+        yoc=y.c
+        if z.g==self.nil:
+            x=z.d
+            self.RN_transplante(z,z.d)
+        elif z.d==self.nil:
+            x=z.g
+            self.RN_transplante(z,z.g)
+        else:
+            y=self.arbre_minimum(z.d)
+            yoc=y.c
+            x=y.d
+            if y.p==z:
+                x.p=y
+            else:
+                self.RN_transplante(y,y.d)
+                y.d=z.d
+                y.d.p=y
+            self.RN_transplante(z,y)
+            y.g=z.g
+            y.g.p=y
+            y.c=z.c
+        while(y!=self.racine):
+            y.t-=1
+            y=y.p
+        self.racine.t=self.racine.g.t+self.racine.d.t+1
+
+
+
+        if yoc=="noir":
+
+            self.RN_supprimer_correction(x)
+
+    def RN_supprimer_correction(self,x):
+        while x!=self.racine and x.c=="noir":
+            if x==x.p.g:
+                w=x.p.d
+                if w.c=="rouge":
+                    w.c="noir"
+                    x.p.c="rouge"
+                    self.rotation_g(x.p)
+                    w=x.p.d
+                if w.g.c=="noir" and w.d.c=="noir":
+                    w.c="rouge"
+                    x=x.p
+                else:
+                    if w.d.c=="noir":
+                        w.g.c="noir"
+                        w.c="rouge"
+                        self.rotation_d(w)
+                        w=x.p.d
+                    w.c=x.p.c
+                    x.p.c="noir"
+                    self.rotation_g(x.p)
+                    x=self.racine
+            else:
+                w=x.p.g
+                if w.c=="rouge":
+                    w.c="noir"
+                    x.p.c="rouge"
+                    self.rotation_d(x.p)
+                    w=x.p.g
+                if w.d.c=="noir" and w.g.c=="noir":
+                    w.c="rouge"
+                    x=x.p
+                else:
+                    if w.g.c=="noir":
+                        w.d.c="noir"
+                        w.c="rouge"
+                        self.rotation_g(w)
+                        w=x.p.g
+                    w.c=x.p.c
+                    x.p.c="noir"
+                    self.rotation_d(x.p)
+                    x=self.racine
+        x.c="noir"
+
+    def lire_rang(self,x,i):
+            r=x.g.t+1
+            if i is r:
+                return x
+            if i<r:
+                return self.lire_rang(x.g,i)
+            if i !=r:
+                return self.lire_rang(x.d,i-r)
+
+    def determiner_rang(self,x):
+        r=x.g.t+1
+        y=x
+        while(y!=self.racine):
+            if y is y.p.d:
+                r=r+y.p.g.t+1
+            y=y.p
+        return r
+
+
+
+    def trouve_Noeud(self,x,k):
+
+        if x is None or k is x.k:
+            return x
+        if k<x.k:
+            return self.trouve_Noeud(x.g,k)
+        return self.trouve_Noeud(x.d,k)
+
+
+
+
+
+
+
+
+
+
+
+
+    def parcourinfixe(self,x):
+        if x != self.nil:
+            self.parcourinfixe(x.g)
+            print(x,end=" ")
+            self.parcourinfixe(x.d)
+
+
+
+
+test = RN_arbre([4,7,12,15,3,5,14,18,16,17])
+test.parcourinfixe(test.racine);print()
+print("apres inserer 14.5");print()
+test.RN_arbre_inserer(Noeud(14.5));print()
+test.parcourinfixe(test.racine);print()
+test.RN_supprimer(test.racine)
+print("apres supprimer 14:");print()
+test.parcourinfixe(test.racine);print()
+tp=test.trouve_Noeud(test.racine,12)
+test.RN_supprimer(tp)
+print(" apres supprimer 12"); print()
+test.parcourinfixe(test.racine);print()
+t1=test.trouve_Noeud(test.racine,5)
+t2=test.trouve_Noeud(test.racine,7)
+t=test.determiner_rang(t1)
+t3=test.determiner_rang(t2)
+print("rang de 5:",t);print()
+print("rang de 7:",t3);print()
+print("apres rotation droite sur 7");print()
+test.rotation_d(t2)
+test.parcourinfixe(test.racine);print()
+test.RN_arbre_inserer(Noeud(24))
+print("apres inserer correction: ");print()
+test.parcourinfixe(test.racine);print()
+t4=test.trouve_Noeud(test.racine,24)
+t5=test.determiner_rang(t4)
+print("rang de 24 :",t5)
+print("rang de 14.5: ", test.determiner_rang(test.trouve_Noeud(test.racine,14.5)))
+print("rang de 15: ", test.determiner_rang(test.trouve_Noeud(test.racine,15)))
+print("rang de 17: ", test.determiner_rang(test.trouve_Noeud(test.racine,17)))
+test.RN_supprimer(test.trouve_Noeud(test.racine,17))
+print("apres supprimer Noeud 17");print()
+test.parcourinfixe(test.racine);print()
+test.rotation_g(test.trouve_Noeud(test.racine,18))
+print("apres rotation sur 18");print()
+test.parcourinfixe(test.racine);print()
+test.rotation_g(test.trouve_Noeud(test.racine,16))
+print("apres rotation sur 16");print()
+test.parcourinfixe(test.racine)
